@@ -14,7 +14,8 @@ repositories {
 }
 
 dependencies {
-  implementation(group = "com.binance.api", name = "binance-api-client", version="1.0.1")
+  implementation("com.binance.api:binance-api-client:1.0.1")
+  //implementation("org.joda:joda-money:1.0.1")
   testImplementation(kotlin("test-junit5"))
   testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.0")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.6.0")
