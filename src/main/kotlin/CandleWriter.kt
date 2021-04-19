@@ -7,8 +7,7 @@ class CandleWriter(
   constructor(fileName: String) : this(
     fileName,
     BufferedWriter(FileWriter(fileName))
-  ) {
-  }
+  )
 
   fun writeCandle(candle: Candle) {
     val chars = candleAsRecord(candle)

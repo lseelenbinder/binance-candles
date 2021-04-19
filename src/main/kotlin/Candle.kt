@@ -1,11 +1,6 @@
 import com.binance.api.client.domain.event.CandlestickEvent
 import java.math.BigDecimal
 
-fun candleMoneyToBigDecimal(value: String) : BigDecimal {
-  val value = value.trimEnd('0')
-  return value.toBigDecimal()
-}
-
 data class Candle (
   val openTime: Long,
   val closeTime: Long,
@@ -23,7 +18,5 @@ data class Candle (
     candle.high.toBigDecimal(),
     candle.low.toBigDecimal(),
     candle.volume.toDouble(),
-  ) {
-
-  }
+  )
 }
