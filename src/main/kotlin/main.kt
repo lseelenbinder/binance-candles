@@ -1,30 +1,34 @@
-import com.binance.api.client.BinanceApiClientFactory
-import com.binance.api.client.domain.market.CandlestickInterval
+import java.lang.Runtime
+import java.util.concurrent.locks.Condition
+import java.util.concurrent.locks.ReentrantLock
+
+enum class RunMode {
+  FETCH, RESIZE
+}
+
 
 fun main(args: Array<String>) {
-  val clientFactory = BinanceApiClientFactory.newInstance("", "")
-  val restClient = clientFactory.newRestClient()
-  val wsClient = clientFactory.newWebSocketClient()
+  var mode = RunMode.FETCH
+  if (args.isNotEmpty()) {
+    mode = RunMode.valueOf(args[0].toUpperCase())
+  }
 
-  print("Trying to contact Binance. . .")
-  restClient.ping()
-  println("success.")
+  println("Running in $mode mode. . .")
 
-  val pair = "ethbtc"
+  when (mode) {
+    RunMode.FETCH -> {
+      val pairs = arrayOf("ethbtc", "ethusdt")
+      val fetcher = CandleFetcher(pairs)
+      // Setup shutdown signal
+      Runtime.getRuntime().addShutdownHook(Thread {
+        println("Caught signal, shutting down. . .")
+        fetcher.close()
+      })
 
-  val serverTime = restClient.exchangeInfo.serverTime
-  println("Binance server time: $serverTime")
-
-  println("Fetching candles . . .")
-  val manager = CandleManager()
-
-  val closeHandle = wsClient.onCandlestickEvent(pair, CandlestickInterval.ONE_MINUTE, manager)
-
-  // TODO: determine multi-threadedness / race conditions
-
-  Thread.sleep(1000 * 120)
-
-  closeHandle.close()
-  manager.finalize()
-  println("All done.")
+      fetcher.runFetch()
+    }
+    RunMode.RESIZE -> {
+      TODO()
+    }
+  }
 }

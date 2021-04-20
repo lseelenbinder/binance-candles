@@ -6,7 +6,7 @@ class CandleWriter(
 ) {
   constructor(fileName: String) : this(
     fileName,
-    BufferedWriter(FileWriter(fileName))
+    BufferedWriter(FileWriter(fileName, true))
   )
 
   fun writeCandle(candle: Candle) {
@@ -17,10 +17,20 @@ class CandleWriter(
   }
 
   fun finish() {
+    // Close also flushes buffer.
     fileHandle.close()
   }
 
   private fun candleAsRecord(candle: Candle) : CharArray {
-    return candle.toString().toCharArray()
+    return listOf(
+      candle.openTime.toString(),
+      candle.closeTime.toString(),
+      candle.open.toString(),
+      candle.close.toString(),
+      candle.high.toString(),
+      candle.low.toString(),
+      candle.volume.toString(),
+      candle.nTrades.toString(),
+    ).joinToString("|").toCharArray()
   }
 }
