@@ -5,12 +5,6 @@ import com.binance.api.client.domain.event.CandlestickEvent
 import com.binance.api.client.domain.market.CandlestickInterval
 import java.io.Closeable
 
-const val MS_IN_MINUTE = 60 * 1000
-const val MS_IN_HOUR = MS_IN_MINUTE * 60
-const val MS_IN_DAY = MS_IN_HOUR * 24
-const val MS_IN_WEEK = MS_IN_DAY * 7
-// TODO: how are months actually defined?
-const val MS_IN_MONTH = MS_IN_DAY * 30
 
 class CandleFetcher(private val pairs: Array<String>): BinanceApiCallback<CandlestickEvent> {
   init {
