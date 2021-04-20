@@ -1,6 +1,5 @@
+import com.binance.api.client.domain.market.CandlestickInterval
 import java.lang.Runtime
-import java.util.concurrent.locks.Condition
-import java.util.concurrent.locks.ReentrantLock
 
 enum class RunMode {
   FETCH, RESIZE
@@ -28,7 +27,11 @@ fun main(args: Array<String>) {
       fetcher.runFetch()
     }
     RunMode.RESIZE -> {
-      TODO()
+      val resizer = CandleResizer("ethbtc")
+      for (c in resizer.resizeForInterval(CandlestickInterval.FIVE_MINUTES)) {
+        println(c)
+      }
+      resizer.close()
     }
   }
 }

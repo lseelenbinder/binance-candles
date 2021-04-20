@@ -1,11 +1,9 @@
 import java.io.*
 
 class CandleWriter(
-  private val fileName: String,
   private var fileHandle: BufferedWriter,
 ) {
   constructor(fileName: String) : this(
-    fileName,
     BufferedWriter(FileWriter(fileName, true))
   )
 
