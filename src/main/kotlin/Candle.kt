@@ -1,5 +1,8 @@
 import com.binance.api.client.domain.event.CandlestickEvent
 import java.math.BigDecimal
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+import java.time.temporal.TemporalAccessor
 
 data class Candle (
   val symbol: String,
@@ -23,6 +26,8 @@ data class Candle (
     candle.volume.toBigDecimal(),
     candle.numberOfTrades,
   )
+
+  fun openTimeAsDateTime(): LocalDateTime = LocalDateTime.ofEpochSecond(this.openTime / 1000, 0, ZoneOffset.UTC)
 
   // Merges two candles (asserts strict left-right order).
   fun foldCandle(candle: Candle) : Candle {

@@ -1,4 +1,6 @@
 import com.binance.api.client.domain.market.CandlestickInterval
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 private const val MS_IN_MINUTE = 60 * 1000
 
@@ -15,12 +17,12 @@ class CandleResizer(
     reader.close()
   }
 
-  fun resizeForInterval(interval: CandlestickInterval): Iterator<Candle> {
-    var candles = reader.readCandles()
+  fun resizeForInterval(interval: CandlestickInterval): Sequence<Candle> {
+    var candles = reader.readCandles().iterator()
 
     val chunkSize = when (interval) {
       // This is the same as the underlying candles, so short-circuit.
-      CandlestickInterval.ONE_MINUTE -> return candles.iterator()
+      CandlestickInterval.ONE_MINUTE -> return candles.asSequence()
       CandlestickInterval.THREE_MINUTES -> 3
       CandlestickInterval.FIVE_MINUTES -> 5
       CandlestickInterval.FIFTEEN_MINUTES -> 15
@@ -39,19 +41,40 @@ class CandleResizer(
 
     val alignment = chunkSize * MS_IN_MINUTE
 
-    return candles
-      // Find the first candle that aligns with the start of the intended interval
-      .dropWhile {
-        it.openTime % alignment != 0L
-      }
-      // FIXME: missing data will break alignment and result in invalid candles.
-      // Use windowed chunks to combine the remaining candles, discarding incomplete candles
-      .windowed(chunkSize, chunkSize, partialWindows = false).map {
-        val firstCandle = it.first()
-        it.fold(firstCandle) { l: Candle, r: Candle ->
-          l.foldCandle(r)
+    return sequence {
+      var lastCandle: Candle = candles.next()
+      while (candles.hasNext()) {
+        var nDropped = 0
+        // Drop candles until we align with the next candle window.
+        val startingCandle = (sequenceOf(lastCandle) + candles.asSequence()).dropWhile {
+          val aligned = it.openTime % alignment == 0L
+          if (!aligned) { nDropped++ }
+          !aligned
+        }.firstOrNull() ?: break // If we're out of candles, we're done.
+
+        if (nDropped > 0) {
+          println("WARNING: Dropped $nDropped candles to preserve alignment.")
         }
+
+        // Combine all candles in the window into one resized candle
+        val resizedCandleEndTime = startingCandle.openTime + alignment - 1
+        var candleCount = 0
+        val resizedCandle = candles.asSequence().takeWhile {
+          candleCount++
+          // This is an non-peekable iterator under the hood, so we need to
+          // capture the last candle and use it at the beginning of the next loop,
+          // otherwise it is discarded.
+          lastCandle = it
+          it.closeTime <= resizedCandleEndTime
+        }.fold(startingCandle) { l: Candle, r: Candle -> l.foldCandle(r) }
+
+        // Print a warning if we didn't process the full candle window.
+        if (candleCount < chunkSize || resizedCandle.closeTime != resizedCandleEndTime) {
+          println("WARNING: Missing candles--candle or data may be bogus.")
+        }
+
+        yield(resizedCandle)
       }
-      .iterator()
+    }
   }
 }
