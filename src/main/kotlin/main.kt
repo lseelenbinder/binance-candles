@@ -29,7 +29,7 @@ fun main(args: Array<String>) {
     RunMode.RESIZE -> {
       val resizer = CandleResizer("ethbtc")
       for (c in resizer.resizeForInterval(CandlestickInterval.FIVE_MINUTES)) {
-        println("${c.openTimeAsDateTime()}: $c")
+        println("${c.openTimeAsDateTime()} to ${c.closeTimeAsDateTime()}: $c")
       }
       resizer.close()
     }

@@ -27,11 +27,14 @@ data class Candle (
     candle.numberOfTrades,
   )
 
-  fun openTimeAsDateTime(): LocalDateTime = LocalDateTime.ofEpochSecond(this.openTime / 1000, 0, ZoneOffset.UTC)
+  fun openTimeAsDateTime() = timeAsDateTime(openTime)
+  fun closeTimeAsDateTime() = timeAsDateTime(closeTime)
 
-  // Merges two candles (asserts strict left-right order).
+  private fun timeAsDateTime(time: Long): LocalDateTime = LocalDateTime.ofEpochSecond(time / 1000, (time % 1000).toInt() * 1000000, ZoneOffset.UTC)
+
+  // Merges two candles (asserts strict left-right order and matching symbols).
   fun foldCandle(candle: Candle) : Candle {
-    assert(this.close < candle.close)
+    assert(this.closeTime < candle.closeTime)
     assert(this.symbol == candle.symbol)
 
     return Candle(
