@@ -5,6 +5,7 @@ import com.binance.api.client.domain.event.CandlestickEvent
 import com.binance.api.client.domain.market.CandlestickInterval
 import java.io.Closeable
 
+fun fileNameForPair(pair: String) = "candles/$pair"
 
 class CandleFetcher(private val pairs: Array<String>): BinanceApiCallback<CandlestickEvent> {
   init {
@@ -25,7 +26,7 @@ class CandleFetcher(private val pairs: Array<String>): BinanceApiCallback<Candle
   private val writers: MutableMap<String, CandleWriter> = mutableMapOf();
   init {
     pairs.forEach {
-      writers[it] = CandleWriter("$it.candles")
+      writers[it] = CandleWriter(fileNameForPair(it))
     }
   }
 

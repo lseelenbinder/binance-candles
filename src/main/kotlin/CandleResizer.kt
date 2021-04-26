@@ -1,6 +1,4 @@
 import com.binance.api.client.domain.market.CandlestickInterval
-import java.time.LocalDateTime
-import java.time.ZoneOffset
 
 private const val MS_IN_MINUTE = 60 * 1000
 
@@ -10,7 +8,7 @@ class CandleResizer(
 ) {
   constructor(pair: String): this(
     pair,
-    CandleReader(pair, "$pair.candles")
+    CandleReader(pair, fileNameForPair(pair))
   )
 
   fun close() {
