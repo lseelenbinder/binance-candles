@@ -15,8 +15,8 @@ class CandleResizer(
     reader.close()
   }
 
-  fun resizeForInterval(interval: CandlestickInterval): Sequence<Candle> {
-    var candles = reader.readCandles().iterator()
+  private fun resizeCandlesForInterval(candlesForResize: Sequence<Candle>, interval: CandlestickInterval): Sequence<Candle> {
+    val candles = candlesForResize.iterator()
 
     val chunkSize = when (interval) {
       // This is the same as the underlying candles, so short-circuit.
@@ -44,11 +44,14 @@ class CandleResizer(
       while (candles.hasNext()) {
         var nDropped = 0
         // Drop candles until we align with the next candle window.
-        val startingCandle = (sequenceOf(lastCandle) + candles.asSequence()).dropWhile {
-          val aligned = it.openTime % alignment == 0L
-          if (!aligned) { nDropped++ }
-          !aligned
-        }.firstOrNull() ?: break // If we're out of candles, we're done.
+        val startingCandle =
+          (sequenceOf(lastCandle) + candles.asSequence()).dropWhile {
+            val aligned = it.openTime % alignment == 0L
+            if (!aligned) {
+              nDropped++
+            }
+            !aligned
+          }.firstOrNull() ?: break // If we're out of candles, we're done.
 
         if (nDropped > 0) {
           println("WARNING: Dropped $nDropped candles to preserve alignment.")
@@ -59,20 +62,25 @@ class CandleResizer(
         var candleCount = 0
         val resizedCandle = candles.asSequence().takeWhile {
           candleCount++
-          // This is an non-peekable iterator under the hood, so we need to
+          // Since this is an non-peekable iterator under the hood, we need to
           // capture the last candle and use it at the beginning of the next loop,
-          // otherwise it is discarded.
+          // otherwise it is discarded and creates alignment and missing data issues.
           lastCandle = it
           it.closeTime <= resizedCandleEndTime
         }.fold(startingCandle) { l: Candle, r: Candle -> l.foldCandle(r) }
 
         // Print a warning if we didn't process the full candle window.
         if (candleCount < chunkSize || resizedCandle.closeTime != resizedCandleEndTime) {
-          println("WARNING: Missing candles--candle or data may be bogus.")
+          println("WARNING: Missing candles--candle or data may be bogus or incomplete.")
         }
 
         yield(resizedCandle)
       }
     }
+  }
+
+  fun resizeForInterval(interval: CandlestickInterval): Sequence<Candle> {
+    val candles = reader.readCandles()
+    return resizeCandlesForInterval(candles, interval)
   }
 }
